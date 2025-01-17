@@ -1,0 +1,17 @@
+PS C:\projekty\Apka\ZTP_BE> python -m venv venv
+PS C:\projekty\Apka\ZTP_BE> venv\Scripts\activate
+(venv) PS C:\projekty\Apka\ZTP_BE> pip install Flask Flask-CORS
+Fatal error in launcher: Unable to create process using '"C:\Apka\ZTP_BE\venv\Scripts\python.exe"  "C:\projekty\Apka\ZTP_BE\venv\Scripts\pip.exe" install Flask Flask-CORS': Nie mo?na odnale?? okre?lonego pliku.
+
+(venv) PS C:\projekty\Apka\ZTP_BE> python app.py
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:3000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 397-030-198
+127.0.0.1 - - [11/Jan/2025 14:37:53] "GET / HTTP/1.1" 404 -
+127.0.0.1 - - [11/Jan/2025 14:37:53] "GET /favicon.ico HTTP/1.1" 404 -
+(venv) PS C:\projekty\Apka\ZTP_BE>
