@@ -71,7 +71,7 @@ def bookings():
             new_booking = RoomBooking(name=data['name'], surname=data['surname'], start_date=start_date, end_date=end_date, pricing_plans=pricing_plans)
             print("Obiekt do zapisu:", new_booking.to_dict())  # Log przed zapisem
             db.session.add(new_booking)
-            db.session.flush() # Wymuszenie zapisu do bazy przed commitem
+            db.session.flush() # Wymuszenie zapisu do bazy przed commitems
             db.session.commit()
             print("Zapisano do bazy danych!")  # Log po zapisie
             return jsonify(new_booking.to_dict()), 201
