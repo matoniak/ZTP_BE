@@ -9,24 +9,24 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bookings.db'  # Zmień na pre
 db = SQLAlchemy(app)
 CORS(app)
 
-# WAŻNE: To są PRZYKŁADOWE wartości. ZASTĄP je wartościami z Twojego frontendu!
+# WAŻNE: ZASTĄP TE WARTOŚCI PRAWDZIWYMI WARTOŚCIAMI Z TWOJEGO FRONTENDU!
 class PricingPlansEnum(enum.Enum):
-    STANDARD = "Standardowy"  # Przykład
-    PREMIUM = "Premium"      # Przykład
-    VIP = "Vip"            # Przykład
-    EARLY_BIRD = "Wczesna rezerwacja" # Dodatkowy przykład
-
-    # Jeśli w frontendzie masz np.:
+    BASIC = "BASIC"      # Przykład - ZASTĄP!
+    PLUS = "PLUS"       # Przykład - ZASTĄP!
+    ULTIMATE = "ULTIMATE" # Przykład - ZASTĄP!
+    # Dodaj inne wartości, jeśli istnieją w frontendzie.
+    # PRZYKŁAD DOPASOWANIA:
+    # Jeśli w frontendzie masz:
     # export enum PricingPlans {
-    #     BASIC = "Podstawowy",
-    #     PLUS = "Rozszerzony",
-    #     ULTIMATE = "Ultymatywny",
+    #     STANDARD = "Standardowy",
+    #     PREMIUM = "Premium",
+    #     VIP = "Vip",
     # }
     # To tutaj MUSI być:
     # class PricingPlansEnum(enum.Enum):
-    #     BASIC = "Podstawowy"
-    #     PLUS = "Rozszerzony"
-    #     ULTIMATE = "Ultymatywny"
+    #     STANDARD = "Standardowy"
+    #     PREMIUM = "Premium"
+    #     VIP = "Vip"
 
 class RoomBooking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -57,35 +57,55 @@ def bookings():
 
     elif request.method == 'POST':
         data = request.get_json()
+        print("Otrzymane dane POST:", data)
         try:
-            start_date = datetime.strptime(data['startDate'], '%Y-%m-%d').date()
-            end_date = datetime.strptime(data['endDate'], '%Y-%m-%d').date()
-            pricing_plans = PricingPlansEnum(data.get('pricingPlans')) if data.get('pricingPlans') else None
+            start_date_str = data['startDate']
+            end_date_str = data['endDate']
+
+            # Parsowanie daty ISO 8601 z obsługą strefy czasowej 'Z'
+            start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00')).date()
+            end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00')).date()
+
+            pricing_plans = PricingPlansEnum(data['pricingPlans']) if data.get('pricingPlans') else None # Poprawione pobieranie pricingPlans
+
             new_booking = RoomBooking(name=data['name'], surname=data['surname'], start_date=start_date, end_date=end_date, pricing_plans=pricing_plans)
+            print("Obiekt do zapisu:", new_booking.to_dict())  # Log przed zapisem
             db.session.add(new_booking)
+            db.session.flush() # Wymuszenie zapisu do bazy przed commitem
             db.session.commit()
+            print("Zapisano do bazy danych!")  # Log po zapisie
             return jsonify(new_booking.to_dict()), 201
-        except (ValueError, KeyError):
-            return jsonify({"error": "Invalid data"}), 400
+        except (ValueError, KeyError, TypeError, Exception) as e:
+            db.session.rollback() # Cofnięcie transakcji w razie błędu
+            print(f"Błąd POST (zapis/parsowanie): {e}")
+            return jsonify({"error": f"Invalid data - Sprawdź format daty (YYYY-MM-DDT00:00:00.000Z) i pricingPlans. Szczegóły: {str(e)}"}), 400 # Dodany szczegółowy komunikat błędu
 
     elif request.method == 'PUT':
         data = request.get_json()
+        print("Otrzymane dane PUT:", data)
         booking = RoomBooking.query.get(data.get('id'))
         if not booking:
             return jsonify({'error': 'Booking not found'}), 404
         try:
-            booking.name = data.get('name')
-            booking.surname = data.get('surname')
-            booking.start_date = datetime.strptime(data['startDate'], '%Y-%m-%d').date()
-            booking.end_date = datetime.strptime(data['endDate'], '%Y-%m-%d').date()
+            start_date_str = data['startDate']
+            end_date_str = data['endDate']
+            start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00')).date()
+            end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00')).date()
             pricing_plans = PricingPlansEnum(data.get('pricingPlans')) if data.get('pricingPlans') else None
+            booking.name = data['name']
+            booking.surname = data['surname']
+            booking.start_date = start_date
+            booking.end_date = end_date
+            booking.pricing_plans = pricing_plans
             db.session.commit()
             return jsonify(booking.to_dict()), 200
-        except (ValueError, KeyError):
-            return jsonify({"error": "Invalid data"}), 400
+        except (ValueError, KeyError, TypeError, Exception) as e:
+            print(f"Błąd PUT: {e}")
+            return jsonify({"error": f"Invalid data - Sprawdź format daty (YYYY-MM-DDT00:00:00.000Z) i pricingPlans. Szczegóły: {str(e)}"}), 400
 
     elif request.method == 'DELETE':
         id = request.args.get('id')
+        print("Otrzymane ID do usunięcia:", id)
         try:
             id = int(id)
         except (ValueError, TypeError):
